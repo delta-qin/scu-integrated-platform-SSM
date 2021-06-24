@@ -66,7 +66,9 @@ public class MqConsumer implements CommunityConstant {
     @Autowired
     private ThreadPoolTaskScheduler taskScheduler;
 
-    // 评论点赞关注
+    // 评论点赞关注（持久化到数据库）
+    // TODO 加上使用websocket实时通知，数据库依旧是要持久化的，不然下次没了
+    // 所以在写到数据库或者Redis的同时，将消息发给前端
     @KafkaListener(topics = {TOPIC_COMMENT, TOPIC_LIKE, TOPIC_FOLLOW})
     public void handleCommentMessage(ConsumerRecord record) {
         if (record == null || record.value() == null) {
@@ -103,7 +105,7 @@ public class MqConsumer implements CommunityConstant {
         messageService.addMessage(message);
     }
 
-    // 消费发帖事件
+    // 消费发帖事件到ES
     @KafkaListener(topics = {TOPIC_PUBLISH})
     public void handlePublishMessage(ConsumerRecord record) {
         if (record == null || record.value() == null) {
@@ -122,7 +124,7 @@ public class MqConsumer implements CommunityConstant {
         elasticsearchService.saveDiscussPost(post);
     }
 
-    // 消费删帖事件
+    // 消费删帖事件到ES
     @KafkaListener(topics = {TOPIC_DELETE})
     public void handleDeleteMessage(ConsumerRecord record) {
         if (record == null || record.value() == null) {
@@ -139,7 +141,7 @@ public class MqConsumer implements CommunityConstant {
         elasticsearchService.deleteDiscussPost(event.getEntityId());
     }
 
-    // 消费分享事件
+    // 消费分享事件上传到七牛云
     @KafkaListener(topics = TOPIC_SHARE)
     public void handleShareMessage(ConsumerRecord record) {
         if (record == null || record.value() == null) {

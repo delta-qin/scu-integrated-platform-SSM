@@ -79,7 +79,7 @@
             and from_id != 1
             and to_id = #{userId}
             <if test="conversationId != null">
-                and conversationId = #{conversationId}
+                and conversation_id = #{conversationId}
             </if>
     </select>
 
