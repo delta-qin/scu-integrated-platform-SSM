@@ -1,6 +1,9 @@
 package com.deltaqin.scussm.entity;
 
+import com.deltaqin.scussm.annotation.AutoIncKey;
 import lombok.Data;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
 
@@ -9,8 +12,11 @@ import java.util.Date;
  * @date 2021/6/24 上午12:33
  */
 @Data
+@Document(collection = "comment")
 public class Comment {
 
+    @AutoIncKey
+    @Id
     private int id;
     private int userId;
     // 类型包含了文章的评论和评论的回复

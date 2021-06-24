@@ -153,6 +153,12 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+<!--        v2.0 优化   -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>
