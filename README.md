@@ -7,12 +7,27 @@
 ## 系统分层架构
 
 ## 项目技术
+kafka、ES、MySQL、Redis、Caffeine、Spring Security、Quartz、Spring Mail、Mybatis、SpringBoot、MongoDB、Netty、webSocket
 
 ## 项目进度
 
-### v1.0 (已完成)
+### v1.0 基于牛客高级项目的基本实现 (已完成)
+- 游客
+    - 浏览帖子
+- 用户
+    - 发布帖子。评论。回复。私信
+    - 点赞。关注用户
+- 版主
+    - 加精。置顶帖子
+- 管理员
+    - 删除帖子
+    
+使用的技术：kafka、ES、MySQL、Redis、Caffeine、Spring Security、Quartz、Spring Mail、Mybatis、SpringBoot
+    
+### v2.0  MongoDB 替换 MySQL 存储评论 (已完成)
 
-### v2.0  MongoDB 替换 MySQL 存储评论
+使用的技术：MongoDB
+
 #### 为什么
 文章评论两项功能存在以下特点：数据量大，写入操作频繁，价值较低。对于这样的数据，我们更适合使用MongoDB来实现数据的存储
 
@@ -21,6 +36,7 @@ MongoDB是一个基于分布式文件存储的数据库。由C++语言编写。�
 [](note/v2.0使用mongoDB改进.md)
 
 ### v3.0 ， 使用websocket + netty 替换项目的私信功能
+
 
 ### v4.0 ， 使用DDD领域模型（充血）对项目重构
 
