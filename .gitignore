@@ -6,3 +6,5 @@ log
 target
 
 *.iml
+/src/main/resources/application-dev1.properties
+/src/main/resources/logback-spring-dev1.xml

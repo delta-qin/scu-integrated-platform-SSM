@@ -3,8 +3,8 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
 	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
+<!--	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">-->
+	<meta name="viewport" content="width=device-width, initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
 	<!--访问该页面时,在此处生成CSRF令牌.开发阶段不使用-->
 <!--	<meta name="_csrf" th:content="${_csrf.token}">-->
 <!--	<meta name="_csrf_header" th:content="${_csrf.headerName}">-->
@@ -19,12 +19,12 @@
 	<div class="nk-container">
 		<!-- 头部 -->
 <!--		 th:fragment="header"   复用  -->
-		<header class="bg-dark sticky-top" th:fragment="header">
+		<header class="bg-warning sticky-top" th:fragment="header">
 			<div class="container">
 				<!-- 导航 -->
 				<nav class="navbar navbar-expand-lg navbar-dark">
 					<!-- logo -->
-					<a class="navbar-brand" style="color: #dcdadc;" th:href="@{/index}">SCU 论坛</a>
+					<a class="navbar-brand" style="color: #ffffff; margin-left: 5px;" th:href="@{/index}">SCU 论坛</a>
 					<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
 							aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
 <!--						这个是Bootstrap自带的-->
@@ -90,7 +90,7 @@
 						</li>
 					</ul>
 <!--					只有登录之后才可以显示我要发布-->
-					<button type="button" class="btn btn-primary btn-sm position-absolute rt-0" data-toggle="modal" data-target="#publishModal"
+					<button type="button" class="btn  btn-warning text-white btn-sm position-absolute rt-0" data-toggle="modal" data-target="#publishModal"
 							th:if="${loginUser!=null}">我要发布</button>
 				</div>
 				<!-- 我要发布 弹出框 -->
@@ -118,7 +118,7 @@
 							<div class="modal-footer">
 								<button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
 <!--								 js 绑定事件，会自动读取其中的内容-->
-								<button type="button" class="btn btn-primary" id="publishBtn">发布</button>
+								<button type="button" class="btn  btn-warning text-white" id="publishBtn">发布</button>
 							</div>
 						</div>
 					</div>
@@ -189,7 +189,7 @@
 						<!--						-->
 
 						<li th:class="|page-item ${i==page.current?'active':''}|"
-							th:each="i:${#numbers.sequence(page.from,page.to)}">
+							th:each="i:${#numbers.sequence(page.from,page.to-1)}">
 							<a class="page-link" th:href="@{${page.path}(current=${i})}" th:text="${i}">1</a>
 						</li>
 						<!--设置是否可以点击的状态 -->
@@ -208,7 +208,7 @@
 		</div>
 
 		<!-- 尾部 -->
-		<footer class="bg-dark" th:fragment="footer">
+		<footer class="bg-warning" th:fragment="footer">
 			<div class="container">
 				<div class="row">
 					<!-- 二维码 -->
@@ -228,9 +228,6 @@
 									</li>
 									<li class="nav-item">
 										<a class="nav-link text-light" href="#">意见反馈</a>
-									</li>
-									<li class="nav-item">
-										<a class="nav-link text-light" href="#">企业服务</a>
 									</li>
 									<li class="nav-item">
 										<a class="nav-link text-light" href="#">联系我们</a>
