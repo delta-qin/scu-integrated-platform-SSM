@@ -1,13 +1,50 @@
 #  校园综合平台
 
+## 部署
+```
+git clone https://github.com.cnpmjs.org/delta-qin/scu-integrated-platform-SSM.git
+
+cd es/
+mkdir -p plugins/ik
+cd ik
+wget https://github.91chifun.workers.dev/https://github.com//medcl/elasticsearch-analysis-ik/releases/download/v6.4.3/elasticsearch-analysis-ik-6.4.3.zip
+unzip ...
+rm -f e...
+```
+es ik文件夹
+
+
 ## 必要性
 - 现有平台难找不纯粹，安全机制不完善
 - 基本没人维护
 
-## 系统分层架构
+## 核心业务流程
+
+## 核心功能模块架构
+
+## 数据如何存储
+
+## 使用到的中间件技术
+
 
 ## 项目技术
-kafka、ES、MySQL、Redis、Caffeine、Spring Security、Quartz、Spring Mail、Mybatis、SpringBoot、MongoDB、Netty、webSocket
+| 技术            | 使用                                                         |      |
+| --------------- | ------------------------------------------------------------ | ---- |
+| SpringBoot      | 项目框架搭建                                                 |      |
+| SpringMail      | 注册邮件校验                                                 |      |
+| Mybatis         | 持久层框架                                                   |      |
+| Spring Secutiry | 用户鉴权控制<br />（认证是自己登录实现，授权直接使用数据库查询权限） |      |
+| caffeine        | 本地缓存                                                     |      |
+| Mysql           | 数据库                                                       |      |
+| Redis           | 实现点赞的数据的存储，以及用户信息和用户登录凭证的存储       |      |
+| Kafka           | 实现消息的通知，异步解耦                                     |      |
+| ElasticSearch   | 所有的文字的搜索，按照热度排序（热度有时间和用户评论点赞综合因素） |      |
+| Quartz          | 定时任务，用于计算文章的分数也就是热度（会去Redis查找是否有任务） |      |
+| MongoDB         | 存放评论的数据                                               |      |
+| netty           | 借助内置的websocket实现消息实时接收（全双工）                |      |
+
+
+
 
 ## 项目进度
 

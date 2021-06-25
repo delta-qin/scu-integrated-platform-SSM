@@ -79,6 +79,9 @@ public class LoginTicketInterceptor implements HandlerInterceptor {
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+        // 这里会内存泄漏吗。其实不算，因为ThreadLocal一直都在，也就是Entry不可能是null
+        // 但是新的来了，旧的还在就会扩容，但是其实旧的已经不用了，另一种内存泄漏，也就是虽然不是null，但是再也不会获取了
+        // 所以在走的时候还是有必要再清理一下
         hostHolder.clear();
         SecurityContextHolder.clearContext();
     }

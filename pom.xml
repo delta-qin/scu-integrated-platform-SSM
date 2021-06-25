@@ -170,7 +170,7 @@
 
     <build>
         <!--		 打包的名字！！！！！！！！！！-->
-        <finalName>ROOT</finalName>
+        <finalName>ssm</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
