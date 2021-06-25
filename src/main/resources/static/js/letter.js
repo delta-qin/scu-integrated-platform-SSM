@@ -3,8 +3,15 @@ $(function(){
 	$(".close").click(delete_msg);
 });
 
+
+
 function send_letter() {
 	$("#sendModal").modal("hide");
+
+	// var single = [[${userId}]];
+	//或（如果第一种方式不行使用第二种）
+	//var single = '[[${singlePerson.name}]]';
+
 
 	var toName = $("#recipient-name").val();
 	var content = $("#message-text").val();
@@ -22,7 +29,7 @@ function send_letter() {
 	        $("#hintModal").modal("show");
             setTimeout(function(){
                 $("#hintModal").modal("hide");
-                location.reload();
+                // location.reload();
             }, 2000);
 	    }
 	);

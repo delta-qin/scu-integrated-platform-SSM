@@ -76,6 +76,12 @@ public interface CommunityConstant {
      */
     String TOPIC_SHARE = "share";
 
+
+    /**
+     * 主题: 私信
+     */
+    String TOPIC_CHAT = "chat";
+
     /**
      * 系统用户ID
      */

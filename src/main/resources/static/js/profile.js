@@ -8,6 +8,7 @@ function follow() {
 		// 关注TA
 		$.post(
 		    CONTEXT_PATH + "/follow",
+			// 3 就是用户实体，1和2一个是评论一个是回复
 		    {"entityType":3,"entityId":$(btn).prev().val()},
 		    function(data) {
 		        data = $.parseJSON(data);

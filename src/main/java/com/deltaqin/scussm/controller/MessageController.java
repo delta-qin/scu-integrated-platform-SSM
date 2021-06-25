@@ -7,6 +7,8 @@ import com.deltaqin.scussm.common.jvmholder.HostHolder;
 import com.deltaqin.scussm.common.utils.JSONStringUtil;
 import com.deltaqin.scussm.entity.Message;
 import com.deltaqin.scussm.entity.User;
+import com.deltaqin.scussm.mq.Event;
+import com.deltaqin.scussm.mq.MqProducer;
 import com.deltaqin.scussm.service.MessageService;
 import com.deltaqin.scussm.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +37,10 @@ public class MessageController implements CommunityConstant {
 
     @Autowired
     private UserService userService;
+
+
+    @Autowired
+    private MqProducer eventProducer;
 
     // 获取私信列表
     @RequestMapping(path = "/letter/list", method = RequestMethod.GET)
@@ -69,6 +75,7 @@ public class MessageController implements CommunityConstant {
         model.addAttribute("letterUnreadCount", letterUnreadCount);
         int noticeUnreadCount = messageService.findNoticeUnreadCount(user.getId(), null);
         model.addAttribute("noticeUnreadCount", noticeUnreadCount);
+        model.addAttribute("userId", user.getId());
 
         return "/site/letter";
     }
@@ -155,6 +162,16 @@ public class MessageController implements CommunityConstant {
         message.setCreateTime(new Date());
         messageService.addMessage(message);
 
+        // 这里给MQ一个Message，不直接发是防止挂
+        Event event = new Event()
+                .setTopic(TOPIC_CHAT)
+                .setUserId(hostHolder.getUser().getId())
+                .setEntityType(ENTITY_TYPE_USER)
+                .setEntityId(target.getId())
+                .setData("content", content)
+                .setData("targetUser", target);
+        eventProducer.fireEvent(event);
+
         return JSONStringUtil.getJSONString(0);
     }
 
@@ -230,6 +247,30 @@ public class MessageController implements CommunityConstant {
 
             model.addAttribute("followNotice", messageVO);
         }
+
+        // 查询关注用户的新发布通知（点到了文章，需要PostID）
+        message = messageService.findLatestNotice(user.getId(), TOPIC_PUBLISH);
+        if (message != null) {
+            Map<String, Object> messageVO = new HashMap<>();
+            messageVO.put("message", message);
+
+            String content = HtmlUtils.htmlUnescape(message.getContent());
+            Map<String, Object> data = JSONObject.parseObject(content, HashMap.class);
+
+            messageVO.put("user", userService.findUserById((Integer) data.get("userId")));
+            messageVO.put("entityType", data.get("entityType"));
+            messageVO.put("entityId", data.get("entityId"));
+            //messageVO.put("postId", data.get("postId"));
+
+            int count = messageService.findNoticeCount(user.getId(), TOPIC_PUBLISH);
+            messageVO.put("count", count);
+
+            int unread = messageService.findNoticeUnreadCount(user.getId(), TOPIC_PUBLISH);
+            messageVO.put("unread", unread);
+
+            model.addAttribute("publicNotice", messageVO);
+        }
+
 
         // 查询未读消息数量
         // 私信的，不关注那一对私信

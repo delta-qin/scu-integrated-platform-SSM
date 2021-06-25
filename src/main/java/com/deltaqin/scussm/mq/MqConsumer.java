@@ -3,11 +3,15 @@ package com.deltaqin.scussm.mq;
 import com.alibaba.fastjson.JSONObject;
 import com.deltaqin.scussm.common.CommunityConstant;
 import com.deltaqin.scussm.common.utils.JSONStringUtil;
+import com.deltaqin.scussm.common.utils.RedisKeyUtil;
 import com.deltaqin.scussm.entity.DiscussPost;
 import com.deltaqin.scussm.entity.Message;
+import com.deltaqin.scussm.entity.User;
+import com.deltaqin.scussm.netty.MyWebSocketHandler;
 import com.deltaqin.scussm.service.DiscussPostService;
 import com.deltaqin.scussm.service.ElasticsearchService;
 import com.deltaqin.scussm.service.MessageService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.Zone;
 import com.qiniu.http.Response;
@@ -15,10 +19,16 @@ import com.qiniu.storage.Configuration;
 import com.qiniu.storage.UploadManager;
 import com.qiniu.util.Auth;
 import com.qiniu.util.StringMap;
+import io.netty.channel.Channel;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Component;
@@ -30,6 +40,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Future;
 
+import static com.deltaqin.scussm.common.utils.JSONStringUtil.getJSONString;
+
 /**
  * @author deltaqin
  * @date 2021/6/24 上午12:25
@@ -38,6 +50,9 @@ import java.util.concurrent.Future;
 @Component
 @Slf4j
 public class MqConsumer implements CommunityConstant {
+
+    private static ObjectMapper MAPPER = new ObjectMapper();
+
 
     @Autowired
     private MessageService messageService;
@@ -66,6 +81,10 @@ public class MqConsumer implements CommunityConstant {
     @Autowired
     private ThreadPoolTaskScheduler taskScheduler;
 
+    @Autowired
+    private RedisTemplate redisTemplate;
+
+
     // 评论点赞关注（持久化到数据库）
     // TODO 加上使用websocket实时通知，数据库依旧是要持久化的，不然下次没了
     // 所以在写到数据库或者Redis的同时，将消息发给前端
@@ -83,26 +102,75 @@ public class MqConsumer implements CommunityConstant {
             return;
         }
 
-        // 发送站内通知
-        Message message = new Message();
-        message.setFromId(SYSTEM_USER_ID);
-        message.setToId(event.getEntityUserId());
-        message.setConversationId(event.getTopic());
-        message.setCreateTime(new Date());
+        // TODO 修复自己赞自己提醒
+        //只有不是自己赞/评论自己才会触发Message
+        if (event.getEntityUserId() != event.getUserId()) {
+            // 发送站内通知
+            Message message = new Message();
+            message.setFromId(SYSTEM_USER_ID);
+            message.setToId(event.getEntityUserId());
+            message.setConversationId(event.getTopic());
+            message.setCreateTime(new Date());
 
-        Map<String, Object> content = new HashMap<>();
-        content.put("userId", event.getUserId());
-        content.put("entityType", event.getEntityType());
-        content.put("entityId", event.getEntityId());
+            Map<String, Object> content = new HashMap<>();
+            content.put("userId", event.getUserId());
+            content.put("entityType", event.getEntityType());
+            content.put("entityId", event.getEntityId());
 
-        if (!event.getData().isEmpty()) {
-            for (Map.Entry<String, Object> entry : event.getData().entrySet()) {
-                content.put(entry.getKey(), entry.getValue());
+            if (!event.getData().isEmpty()) {
+                for (Map.Entry<String, Object> entry : event.getData().entrySet()) {
+                    content.put(entry.getKey(), entry.getValue());
+                }
             }
+
+            message.setContent(JSONObject.toJSONString(content));
+            messageService.addMessage(message);
+
+
+            //// 获取当前用户是否在线
+            //Channel channel = MyWebSocketHandler.userChannelMap.get(event.getEntityId());
+            ////如果连接不为空，表示用户在线
+            ////封装返回数据
+            //if (channel != null) {
+            //    Map<String, Object> map = new HashMap<>();
+            //    map.put("content", event.getData().get("content"));
+            //    map.put("target", event.getData().get("targetUser"));
+            //    // 把数据通过WebSocket连接主动推送用户
+            //    channel.writeAndFlush(new TextWebSocketFrame(getJSONString(0, "ok", map)));
+            //}
+
+        }
+    }
+
+    @KafkaListener(topics = {TOPIC_CHAT})
+    public void handleChatMessage(ConsumerRecord record) {
+        if (record == null || record.value() == null) {
+            log.error("消息的内容为空!");
+            return;
         }
 
-        message.setContent(JSONObject.toJSONString(content));
-        messageService.addMessage(message);
+        // 恢复为事件
+        Event event = JSONObject.parseObject(record.value().toString(), Event.class);
+        if (event == null) {
+            log.error("消息格式错误!");
+            return;
+        }
+
+        // 获取目标用户是否在线
+        Channel channel = MyWebSocketHandler.userChannelMap.get(event.getEntityId());
+        //如果连接不为空，表示用户在线
+        //封装返回数据
+        if (channel != null) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("content", event.getData().get("content"));
+            JSONObject targetUser = (JSONObject) event.getData().get("targetUser");
+
+            map.put("headerUrl", targetUser.getString("headerUrl"));
+            map.put("id", targetUser.getIntValue("id"));
+            map.put("username", targetUser.getString("username"));
+            // 把数据通过WebSocket连接主动推送用户
+            channel.writeAndFlush(new TextWebSocketFrame(getJSONString(0, "ok", map)));
+        }
     }
 
     // 消费发帖事件到ES
@@ -119,9 +187,46 @@ public class MqConsumer implements CommunityConstant {
             return;
         }
 
-        // 查询帖子的信息放到ES里面
+        // 1. 查询帖子的信息放到ES里面
         DiscussPost post = discussPostService.findDiscussPostById(event.getEntityId());
         elasticsearchService.saveDiscussPost(post);
+
+        // 2. 查询帖子作者的关注者，通知这些人有新文章
+        // 			// 3 就是用户实体，1和2一个是评论一个是回复
+        String followerKey = RedisKeyUtil.getFollowerKey(3, event.getUserId());
+        //Cursor<> scan = redisTemplate.opsForZSet().scan(followerKey, ScanOptions.NONE);
+        Cursor<ZSetOperations.TypedTuple<Object>> cursor =
+                redisTemplate.opsForZSet().scan(followerKey, ScanOptions.NONE);
+        while (cursor.hasNext()) {
+            ZSetOperations.TypedTuple<Object> typedTuple = cursor.next();
+            //System.out.println("通过scan(K key, ScanOptions options)方法获取匹配元素:" +
+            //         + "--->" + typedTuple.getScore());
+            Integer value = (Integer)typedTuple.getValue();
+
+            // 发送站内通知
+            Message message = new Message();
+            // 系统的发送者就是 1
+            message.setFromId(SYSTEM_USER_ID);
+            message.setToId(value);
+            // 这个属性不同消息的内容是不一样的，有每一个消费者都对应不同的消息类型，还有私信的消息也在这
+            message.setConversationId(event.getTopic());
+            message.setCreateTime(new Date());
+
+            Map<String, Object> content = new HashMap<>();
+            content.put("userId", event.getUserId());
+            // 帖子是1
+            content.put("entityType", event.getEntityType());
+            // ID 是帖子的
+            content.put("entityId", event.getEntityId());
+
+            if (!event.getData().isEmpty()) {
+                for (Map.Entry<String, Object> entry : event.getData().entrySet()) {
+                    content.put(entry.getKey(), entry.getValue());
+                }
+            }
+            message.setContent(JSONObject.toJSONString(content));
+            messageService.addMessage(message);
+        }
     }
 
     // 消费删帖事件到ES
@@ -221,7 +326,7 @@ public class MqConsumer implements CommunityConstant {
                 log.info(String.format("开始第%d次上传[%s].", ++uploadTimes, fileName));
                 // 设置响应信息
                 StringMap policy = new StringMap();
-                policy.put("returnBody", JSONStringUtil.getJSONString(0));
+                policy.put("returnBody", getJSONString(0));
                 // 生成上传凭证
                 Auth auth = Auth.create(accessKey, secretKey);
                 String uploadToken = auth.uploadToken(shareBucketName, fileName, 3600, policy);

@@ -35,8 +35,15 @@
 							</a>
 						</li>
 					</ul>
+					<button type="button" class="btn btn-primary btn-sm "
+							 onclick="connect()">建立ws连接</button>
+					<button type="button" class="btn btn-primary btn-sm  "
+							 onclick="login()">用户上线</button>
+<!--					<span th:value="${userId}"  id="userId"></span>-->
+
 					<button type="button" class="btn btn-primary btn-sm position-absolute rt-0"
 							data-toggle="modal" data-target="#sendModal">发私信</button>
+
 				</div>
 				<!-- 弹出框 -->
 <!--				 sendModal  有显示属性 -->
@@ -65,7 +72,7 @@
 							<div class="modal-footer">
 								<button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
 <!--								 sendBtn 有绑定-->
-								<button type="button" class="btn btn-primary" id="sendBtn">发送</button>
+								<button type="button" class="btn btn-primary" id="sendBtn" >发送</button>
 							</div>
 						</div>
 					</div>
@@ -118,81 +125,12 @@
 				</ul>
 				<!-- 分页 -->
 				<nav class="mt-5" th:replace="index::pagination">
-<!--					<ul class="pagination justify-content-center">-->
-<!--						<li class="page-item"><a class="page-link" href="#">首页</a></li>-->
-<!--						<li class="page-item disabled"><a class="page-link" href="#">上一页</a></li>-->
-<!--						<li class="page-item active"><a class="page-link" href="#">1</a></li>-->
-<!--						<li class="page-item"><a class="page-link" href="#">2</a></li>-->
-<!--						<li class="page-item"><a class="page-link" href="#">3</a></li>-->
-<!--						<li class="page-item"><a class="page-link" href="#">4</a></li>-->
-<!--						<li class="page-item"><a class="page-link" href="#">5</a></li>-->
-<!--						<li class="page-item"><a class="page-link" href="#">下一页</a></li>-->
-<!--						<li class="page-item"><a class="page-link" href="#">末页</a></li>-->
-<!--					</ul>-->
 				</nav>
 			</div>
 		</div>
 
 		<!-- 尾部 -->
 		<footer class="bg-dark" th:replace="index::footer">
-<!--			<div class="container">-->
-<!--				<div class="row">-->
-<!--					&lt;!&ndash; 二维码 &ndash;&gt;-->
-<!--					<div class="col-4 qrcode">-->
-<!--						<img src="https://uploadfiles.nowcoder.com/app/app_download.png" class="img-thumbnail" style="width:136px;" />-->
-<!--					</div>-->
-<!--					&lt;!&ndash; 公司信息 &ndash;&gt;-->
-<!--					<div class="col-8 detail-info">-->
-<!--						<div class="row">-->
-<!--							<div class="col">-->
-<!--								<ul class="nav">-->
-<!--									<li class="nav-item">-->
-<!--										<a class="nav-link text-light" href="#">关于我们</a>-->
-<!--									</li>-->
-<!--									<li class="nav-item">-->
-<!--										<a class="nav-link text-light" href="#">加入我们</a>-->
-<!--									</li>-->
-<!--									<li class="nav-item">-->
-<!--										<a class="nav-link text-light" href="#">意见反馈</a>-->
-<!--									</li>-->
-<!--									<li class="nav-item">-->
-<!--										<a class="nav-link text-light" href="#">企业服务</a>-->
-<!--									</li>-->
-<!--									<li class="nav-item">-->
-<!--										<a class="nav-link text-light" href="#">联系我们</a>-->
-<!--									</li>-->
-<!--									<li class="nav-item">-->
-<!--										<a class="nav-link text-light" href="#">免责声明</a>-->
-<!--									</li>-->
-<!--									<li class="nav-item">-->
-<!--										<a class="nav-link text-light" href="#">友情链接</a>-->
-<!--									</li>-->
-<!--								</ul>-->
-<!--							</div>-->
-<!--						</div>-->
-<!--						<div class="row">-->
-<!--							<div class="col">-->
-<!--								<ul class="nav btn-group-vertical company-info">-->
-<!--									<li class="nav-item text-white-50">-->
-<!--										公司地址：北京市朝阳区大屯路东金泉时代3-2708北京牛客科技有限公司-->
-<!--									</li>-->
-<!--									<li class="nav-item text-white-50">-->
-<!--										联系方式：010-60728802(电话)&nbsp;&nbsp;&nbsp;&nbsp;admin@nowcoder.com-->
-<!--									</li>-->
-<!--									<li class="nav-item text-white-50">-->
-<!--										牛客科技©2018 All rights reserved-->
-<!--									</li>-->
-<!--									<li class="nav-item text-white-50">-->
-<!--										京ICP备14055008号-4 &nbsp;&nbsp;&nbsp;&nbsp;-->
-<!--										<img src="http://static.nowcoder.com/company/images/res/ghs.png" style="width:18px;" />-->
-<!--										京公网安备 11010502036488号-->
-<!--									</li>-->
-<!--								</ul>-->
-<!--							</div>-->
-<!--						</div>-->
-<!--					</div>-->
-<!--				</div>-->
-<!--			</div>-->
 		</footer>
 	</div>
 
@@ -201,5 +139,13 @@
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" crossorigin="anonymous"></script>
 	<script th:src="@{/js/global.js}"></script>
 	<script th:src="@{/js/letter.js}"></script>
+	<script th:inline="javascript">
+		var userId = [[${userId}]];
+		function login() {
+			// var userId = $("#userId").val();
+			console.log(userId)
+			send(userId)
+		}
+	</script>
 </body>
 </html>

@@ -1,5 +1,8 @@
 $(function(){
 	$("#publishBtn").click(publish);
+	$("#logout").click(disconnect);
+	// $("#send").click(send());
+
 });
 
 function publish() {

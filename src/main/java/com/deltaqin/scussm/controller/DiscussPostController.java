@@ -67,6 +67,7 @@ public class DiscussPostController implements CommunityConstant {
 
         // 触发发帖事件
         // TOPIC_PUBLISH 是发帖，也就是ES会消费的，异步添加新数据到索引库
+        // 同时会通知关注者
         Event event = new Event()
                 .setTopic(TOPIC_PUBLISH)
                 .setUserId(user.getId())
