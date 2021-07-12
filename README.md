@@ -1,33 +1,22 @@
 #  校园综合平台
 
-## 部署
-```
-git clone https://github.com.cnpmjs.org/delta-qin/scu-integrated-platform-SSM.git
+> 欢迎提出修改建议以及实现思路！！！
 
-cd es/
-mkdir -p plugins/ik
-cd ik
-wget https://github.91chifun.workers.dev/https://github.com//medcl/elasticsearch-analysis-ik/releases/download/v6.4.3/elasticsearch-analysis-ik-6.4.3.zip
-unzip ...
-rm -f e...
-```
-es ik文件夹
+**校园论坛项目。包括发帖，点赞评论，热门搜索，聊天室，私信，关注通知。。。**
 
+- （已实现）第一版基于**牛客网的高级项目**。
 
-## 必要性
-- 现有平台难找不纯粹，安全机制不完善
-- 基本没人维护
+- （已实现）第二版借鉴**十次方项目将评论优化为MongoDB存储**。
+- （已实现）第三版使用**netty配合websocket实现全双工通信。**
+- （已实现）第四版配合**docker-compose实现一键部署**，不需要自己动手安装各种中间件。
 
-## 核心业务流程
-
-## 核心功能模块架构
-
-## 数据如何存储
-
-## 使用到的中间件技术
-
+- （进行中）第五版使用rocketMQ替换kafka
+- （未开始）第六版使用 DDD 重构项目
+- （未开始）第七版优化聊天室
+- （未开始）第八版增加二手交易市场
 
 ## 项目技术
+
 | 技术            | 使用                                                         |      |
 | --------------- | ------------------------------------------------------------ | ---- |
 | SpringBoot      | 项目框架搭建                                                 |      |
@@ -42,13 +31,86 @@ es ik文件夹
 | Quartz          | 定时任务，用于计算文章的分数也就是热度（会去Redis查找是否有任务） |      |
 | MongoDB         | 存放评论的数据                                               |      |
 | netty           | 借助内置的websocket实现消息实时接收（全双工）                |      |
+| docker          | 实现项目打包，但是不同于以往使用maven在本地打包之后上传，而是直接在服务器使用maven构建项目 |      |
+| docker-compose  | 避免在本地打包镜像<br />集成所有中间件的部署，不需要手动部署 |      |
+
+## docker-compose “一键部署”
+
+如果用的是Linux需不仅仅要安装docker还要安装docker-compose
+
+参考链接：https://www.yuque.com/docs/share/2f417fd0-4822-425a-a5c2-4b087880353e?# 《docker安装》
+
+> 有时候运行的时候compose报错，一般是版本问题，去仓库找最新的版本替换就好
+
+```bash
+git clone https://github.com.cnpmjs.org/delta-qin/scu-integrated-platform-SSM.git
+
+# 进入 scu-integrated-platform-SSM/docker
+# 安装ik分词器插件
+cd scu-integrated-platform-SSM/docker/es/
+mkdir -p plugins/ik
+cd ik
+wget https://github.91chifun.workers.dev/https://github.com//medcl/elasticsearch-analysis-ik/releases/download/v6.4.3/elasticsearch-analysis-ik-6.4.3.zip
+unzip elasticsearch-analysis-ik-6.4.3.zip
+rm -f elasticsearch-analysis-ik-6.4.3.zip
+
+# 进入 scu-integrated-platform-SSM/src/main/resources
+# cd ......
+vi application-prod.properties
+```
+- 主要把下面配置为自己的，邮箱秘钥要去自己邮箱设置里找
+- 服务器IP设置自己的机器的即可，用于注册的时候收邮件验证
+- 七牛是上传图片用的，自己注册用户名，创建存储空间即可，会有临时的域名，一个月过期
+
+```properties
+########################################################
+# MailProperties                                       #
+#                                                      #
+########################################################
+spring.mail.username=邮箱
+spring.mail.password=邮箱秘钥
+########################################################
+# community                                            #
+#                                                      #
+########################################################
+# 域名用于验证邮件变为可配置的
+community.path.domain=http://服务器ip
+########################################################
+# qiniu                                                #
+#                                                      #
+########################################################
+qiniu.key.access=七牛秘钥ID 
+qiniu.key.secret=七牛秘钥
+qiniu.bucket.header.name=空间名字
+quniu.bucket.header.url=空间域名
+qiniu.bucket.share.name=空间名字
+qiniu.bucket.share.url=空间域名
+```
+
+上面的配置结束之后
+
+```bash
+# 进入 scu-integrated-platform-SSM/docker
+docker-compose up -d
+```
+
+最终效果：
+
+![image-20210713001324320](./README.assets/image-20210713001324320.png)
+
+关闭：
+
+```bash
+docker-compose down
+```
 
 
-
-
-## 项目进度
+## 项目进度（v5.0）
 
 ### v1.0 基于牛客高级项目的基本实现 (已完成)
+
+![image-20210713011305206](./README.assets/image-20210713011305206.png)
+
 - 游客
     - 浏览帖子
 - 用户
@@ -60,10 +122,11 @@ es ik文件夹
     - 删除帖子
 
 使用的技术：kafka、ES、MySQL、Redis、Caffeine、Spring Security、Quartz、Spring Mail、Mybatis、SpringBoot
-    
 #### 为什么使用消息队列存储新消息而不是数据库
 用户的通知消息和新通知提醒数据都放在数据库中，数据库的读写操作频繁，尤其是新消息表，访问压力大。
 通知消息还在数据库，因为需要持久化，新消息转移到消息队列，快速而且可以实现**异步**落库消息
+
+
 
 ### v2.0  MongoDB 替换 MySQL 存储评论 (已完成)
 
@@ -75,6 +138,8 @@ es ik文件夹
 MongoDB是一个基于分布式文件存储的数据库。由C++语言编写。旨在为WEB应用提供可扩展的高性能数据存储解决方案。 MongoDB是一个介于关系数据库和非关系数据库之间的产品，是非关系数据库当中功能最丰富，最像关系数据库的。它支持的数据结构非常松散，是类似json的bson格式，因此可以存储比较复杂的数据类型。
 
 [](note/v2.0使用mongoDB改进.md)
+
+
 
 ### v3.0 ， 使用websocket + netty 替换项目的私信和系统通知功能，同时实现文章订阅功能（基本实现，使用模板引擎有点问题，一刷新websocket就断开，需要重新连接）
 
@@ -109,9 +174,104 @@ MongoDB是一个基于分布式文件存储的数据库。由C++语言编写。�
 #### 修复自己赞自己也会收到通知（已实现）
 消费的时候判断一下，是自己的就不消息了
 
-### v4.0 ， 使用DDD领域模型（充血）对项目重构
 
-## 项目结构
+
+### v4.0 使用docker-compose 部署项目（已实现）
+
+所有的中间件都集成起来，不需要自己安装中间件
+
+### v5.0 使用rocketMQ替换kafka（进行中）
+
+#### 为什么替换？
+
+不太熟悉kafka，而且八股文里面kafka适合日志收集，高吞吐，但是少量情况会数据丢失（因为是基于内存），当然现在可以实现不丢失数据只是代价比价比较大。而且功能比较少（可能新版的也在不断增加）
+
+所以决定替换为中规中矩的rocketMQ，在功能和数据安全上都有保证，自己也比较熟悉。
+
+### v6.0 使用DDD领域模型（充血）对项目重构（未开始）
+
+### v7.0 第七版优化聊天室（未开始）
+
+### v8.0 增加二手交易市场（未开始）
+
+## 项目结构（now）
+
+```bash
+.
+├── README.assets
+├── README.md  # 项目说明
+├── deploy.md  # 不使用docker部署
+├── docker     # docker配置文件夹
+│   ├── Dockerfile # ssm项目的配置
+│   ├── docker-compose.yml # docker-compose启动配置
+│   ├── es # es容器配置文件的映射
+│   │   ├── data
+│   │   │   └── readme.md
+│   │   ├── elasticsearch.yml
+│   │   ├── log4j2.properties
+│   │   └── plugins # 部署时候要自己创建
+│   ├── mongo 
+│   │   └── init.js # mongo容器初始化用户数据文件的映射
+│   ├── mysql
+│   │   ├── config
+│   │   │   └── my.cnf # mysql 容器配置文件的映射
+│   │   └── init
+│   │       └── init.sql  # 初始化库
+│   ├── nginx
+│   │   └── conf.d
+│   │       └── nginx.conf # nginx配置文件映射
+│   └── redis
+│       ├── data # Redis数据映射位置
+│       │   └── readme.md
+│       └── redis.conf # Redis配置文件映射
+├── img
+├── jmeter  # jmeter预测文件
+├── log
+├── note
+├── pom.xml
+├── sql
+│   └── scu_integrated_platform_SSM.sql # 手动初始化库
+├── src
+│   ├── main
+│   │   ├── java
+│   │   │   └── com
+│   │   │       └── deltaqin
+│   │   │           └── scussm
+│   │   │               ├── SSMStartApplication.java
+│   │   │               ├── annotation # 自定义注解
+│   │   │               ├── aspect # 自定义切面
+│   │   │               ├── common # 工具类
+│   │   │               ├── config # 配置类
+│   │   │               ├── controller 
+│   │   │               ├── dao
+│   │   │               ├── entity
+│   │   │               ├── interceptor
+│   │   │               ├── mail
+│   │   │               ├── mq
+│   │   │               ├── netty
+│   │   │               ├── quartz
+│   │   │               └── service
+│   │   └── resources
+│   │       ├── application-dev.properties
+│   │       ├── application-prod.properties
+│   │       ├── application.properties
+│   │       ├── logback-spring-dev.xml
+│   │       ├── logback-spring-prod.xml
+│   │       ├── mapper
+│   │       ├── sensitive-words.txt # 敏感词
+│   │       ├── static # 静态资源
+│   │       └── templates # 模板页面
+│   └── test
+│       └── java
+├── target
+└── wk-images
+
+```
+
+
+
+## 项目结构（Future）
+
 ```
 .
 ├── README.md
@@ -126,15 +286,13 @@ MongoDB是一个基于分布式文件存储的数据库。由C++语言编写。�
 
 ```
 
-## 项目运行
-
-只需要启动starter里面的项目即可
-
-## 项目部署
+## 手动安装中间件，项目开发 / 部署
 
 [部署文档](deploy.md) 
 
 ## 压力测试
+
+主要是压测加入缓存之后的热门帖子的吞吐量。
 
 [压测项目](jmeter) 
 
