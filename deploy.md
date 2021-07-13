@@ -201,6 +201,7 @@ https://github.com/medcl/elasticsearch-analysis-ik/releases/tag/v6.4.3
 
 ```
 后台启动
+非root的家目录里面一般是
 bin/elasticsearch -d
 
 关闭

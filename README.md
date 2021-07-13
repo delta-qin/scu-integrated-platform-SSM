@@ -230,7 +230,7 @@ MongoDB是一个基于分布式文件存储的数据库。由C++语言编写。�
 ├── note
 ├── pom.xml
 ├── sql
-│   └── scu_integrated_platform_SSM.sql # 手动初始化库
+│   └── init.sql # 手动初始化库
 ├── src
 │   ├── main
 │   │   ├── java

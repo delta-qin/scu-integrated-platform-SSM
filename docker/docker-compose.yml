@@ -1,4 +1,6 @@
 version: '3'
+# 配置文件参考：
+# https://blog.csdn.net/RtxTitanV/article/details/106927920
 services:
   nginx:
     container_name: nginx
@@ -166,7 +168,7 @@ services:
       - ~/.m2:/root/.m2
     ports:                              # 映射端口
       - "8080:8080"
-    command: mvn clean spring-boot:run -Dspring-boot.run.profiles=prod '-Dmaven.test.skip=true' # 容器创建后执行命令运行springboot项目
+    command: mvn clean spring-boot:run -Dspring-boot.run.profiles=prod -Dspring-boot.run.jvmArguments="-Xms128m -Xmx128m" '-Dmaven.test.skip=true' # 容器创建后执行命令运行springboot项目
     depends_on:
       - cache
       - mysql
