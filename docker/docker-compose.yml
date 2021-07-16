@@ -74,7 +74,7 @@ services:
     volumes:
       - ./rocketmq/data/logs:/opt/logs
       - ./rocketmq/data/store:/opt/store
-      - ./rocketmq/data/brokerconf/broker.conf:/etc/rocketmq/broker.conf
+      - ./rocketmq/brokerconf/broker.conf:/etc/rocketmq/broker.conf
     environment:
       NAMESRV_ADDR: "rmqnamesrv:9876"
       JAVA_OPTS: " -Duser.home=/opt"
@@ -91,7 +91,7 @@ services:
     image: styletang/rocketmq-console-ng
     container_name: rmqconsole
     ports:
-      - 8080:8080
+      - 8081:8080
     environment:
       JAVA_OPTS: "-Drocketmq.namesrv.addr=rmqnamesrv:9876 -Dcom.rocketmq.sendMessageWithVIPChannel=false"
     depends_on:
@@ -224,7 +224,8 @@ services:
       - cache
       - mysql
       - es
-      - kafka
+      - rmqnamesrv
+      - rmqbroker
       - mongodb
 
 # 外部数据卷
