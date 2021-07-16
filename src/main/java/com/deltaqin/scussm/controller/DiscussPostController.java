@@ -63,7 +63,7 @@ public class DiscussPostController implements CommunityConstant {
         post.setTitle(title);
         post.setContent(content);
         post.setCreateTime(new Date());
-        discussPostService.addDiscussPost(post);
+        //discussPostService.addDiscussPost(post);
 
         // 触发发帖事件
         // TOPIC_PUBLISH 是发帖，也就是ES会消费的，异步添加新数据到索引库
@@ -73,7 +73,7 @@ public class DiscussPostController implements CommunityConstant {
                 .setUserId(user.getId())
                 .setEntityType(ENTITY_TYPE_POST)
                 .setEntityId(post.getId());
-        eventProducer.fireEvent(event);
+        eventProducer.transactionAsyncFireEvent(event, post);
 
         // 计算帖子分数，放到这个集合，定时任务会从这里取走等待计算分数的帖子
         String redisKey = RedisKeyUtil.getPostScoreKey();

@@ -102,4 +102,9 @@ public interface CommunityConstant {
      */
     String AUTHORITY_MODERATOR = "moderator";
 
+
+    String PRODUCER_GROUP =  "producer_group";
+    String TRANSACTION_PRODUCER_GROUP = "transaction_producer_group";
+    String CONSUMER_GROUP = "consumer_group";
+
 }

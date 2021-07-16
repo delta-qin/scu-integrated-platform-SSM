@@ -1,5 +1,6 @@
 package com.deltaqin.scussm.mq;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.deltaqin.scussm.common.CommunityConstant;
 import com.deltaqin.scussm.common.utils.JSONStringUtil;
@@ -22,21 +23,29 @@ import com.qiniu.util.StringMap;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+//import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
+import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
+import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
+import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
+import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.common.message.MessageExt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.ZSetOperations;
-import org.springframework.kafka.annotation.KafkaListener;
+//import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
@@ -52,6 +61,16 @@ import static com.deltaqin.scussm.common.utils.JSONStringUtil.getJSONString;
 public class MqConsumer implements CommunityConstant {
 
     private static ObjectMapper MAPPER = new ObjectMapper();
+
+    private DefaultMQPushConsumer consumer;
+
+    @Value("${mq.nameserver.addr}")
+    private String nameServerAddr;
+
+    @Value("${mq.topicname}")
+    private String topicName;
+
+
 
 
     @Autowired
@@ -85,24 +104,57 @@ public class MqConsumer implements CommunityConstant {
     private RedisTemplate redisTemplate;
 
 
+    @PostConstruct
+    public void init() throws MQClientException {
+        consumer = new DefaultMQPushConsumer(CONSUMER_GROUP);
+        consumer.setNamesrvAddr(nameServerAddr);
+        consumer.subscribe(topicName, "*");
+        consumer.registerMessageListener(new MessageListenerConcurrently() {
+            // 注册监听器
+            @Override
+            public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> list, ConsumeConcurrentlyContext consumeConcurrentlyContext) {
+                org.apache.rocketmq.common.message.Message message = list.get(0);
+                String jsonString = new String(message.getBody());
+                Event event = JSON.parseObject(jsonString, Event.class);
+                String topic = event.getTopic();
+
+                switch (topic){
+                    case TOPIC_COMMENT: case TOPIC_LIKE: case TOPIC_FOLLOW:
+                        handleCommentMessage(event);
+                        break;
+                    case TOPIC_CHAT:
+                        handleChatMessage(event);
+                        break;
+                    case TOPIC_PUBLISH:
+                        handlePublishMessage(event);
+                        break;
+                    case TOPIC_DELETE:
+                        handleDeleteMessage(event);
+                        break;
+                    case TOPIC_SHARE:
+                        handleShareMessage(event);
+                        break;
+                }
+
+                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+            }
+        });
+
+        consumer.start();
+    }
+
+
     // 评论点赞关注（持久化到数据库）
-    // TODO 加上使用websocket实时通知，数据库依旧是要持久化的，不然下次没了
+    // DONE 加上使用websocket实时通知，数据库依旧是要持久化的，不然下次没了
     // 所以在写到数据库或者Redis的同时，将消息发给前端
-    @KafkaListener(topics = {TOPIC_COMMENT, TOPIC_LIKE, TOPIC_FOLLOW})
-    public void handleCommentMessage(ConsumerRecord record) {
-        if (record == null || record.value() == null) {
+    //@KafkaListener(topics = {TOPIC_COMMENT, TOPIC_LIKE, TOPIC_FOLLOW})
+    public void handleCommentMessage(Event event) {
+        if (event == null) {
             log.error("消息的内容为空!");
             return;
         }
 
-        // 恢复为事件
-        Event event = JSONObject.parseObject(record.value().toString(), Event.class);
-        if (event == null) {
-            log.error("消息格式错误!");
-            return;
-        }
-
-        // TODO 修复自己赞自己提醒
+        // DONE 修复自己赞自己提醒
         //只有不是自己赞/评论自己才会触发Message
         if (event.getEntityUserId() != event.getUserId()) {
             // 发送站内通知
@@ -140,19 +192,13 @@ public class MqConsumer implements CommunityConstant {
             //}
 
         }
+        log.info("消费成功");
     }
 
-    @KafkaListener(topics = {TOPIC_CHAT})
-    public void handleChatMessage(ConsumerRecord record) {
-        if (record == null || record.value() == null) {
-            log.error("消息的内容为空!");
-            return;
-        }
-
-        // 恢复为事件
-        Event event = JSONObject.parseObject(record.value().toString(), Event.class);
+    //@KafkaListener(topics = {TOPIC_CHAT})
+    public void handleChatMessage(Event event) {
         if (event == null) {
-            log.error("消息格式错误!");
+            log.error("消息的内容为空!");
             return;
         }
 
@@ -174,16 +220,10 @@ public class MqConsumer implements CommunityConstant {
     }
 
     // 消费发帖事件到ES
-    @KafkaListener(topics = {TOPIC_PUBLISH})
-    public void handlePublishMessage(ConsumerRecord record) {
-        if (record == null || record.value() == null) {
-            log.error("消息的内容为空!");
-            return;
-        }
-
-        Event event = JSONObject.parseObject(record.value().toString(), Event.class);
+    //@KafkaListener(topics = {TOPIC_PUBLISH})
+    public void handlePublishMessage(Event event) {
         if (event == null) {
-            log.error("消息格式错误!");
+            log.error("消息的内容为空!");
             return;
         }
 
@@ -230,14 +270,8 @@ public class MqConsumer implements CommunityConstant {
     }
 
     // 消费删帖事件到ES
-    @KafkaListener(topics = {TOPIC_DELETE})
-    public void handleDeleteMessage(ConsumerRecord record) {
-        if (record == null || record.value() == null) {
-            log.error("消息的内容为空!");
-            return;
-        }
-
-        Event event = JSONObject.parseObject(record.value().toString(), Event.class);
+    //@KafkaListener(topics = {TOPIC_DELETE})
+    public void handleDeleteMessage(Event event) {
         if (event == null) {
             log.error("消息格式错误!");
             return;
@@ -247,14 +281,8 @@ public class MqConsumer implements CommunityConstant {
     }
 
     // 消费分享事件上传到七牛云
-    @KafkaListener(topics = TOPIC_SHARE)
-    public void handleShareMessage(ConsumerRecord record) {
-        if (record == null || record.value() == null) {
-            log.error("消息的内容为空!");
-            return;
-        }
-
-        Event event = JSONObject.parseObject(record.value().toString(), Event.class);
+    //@KafkaListener(topics = TOPIC_SHARE)
+    public void handleShareMessage(Event event) {
         if (event == null) {
             log.error("消息格式错误!");
             return;
