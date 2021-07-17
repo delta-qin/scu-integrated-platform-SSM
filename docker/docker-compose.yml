@@ -31,7 +31,7 @@ services:
       - bootstrap.memory_lock=true
       - transport.host=0.0.0.0
       - transport.tcp.port=9300
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "ES_JAVA_OPTS=-Xms125m -Xmx125m"
       - network.host=0.0.0.0
       - "discovery.type=single-node" #单节点启动
     ulimits:
@@ -78,7 +78,7 @@ services:
     environment:
       NAMESRV_ADDR: "rmqnamesrv:9876"
       JAVA_OPTS: " -Duser.home=/opt"
-      JAVA_OPT_EXT: "-server -Xms128m -Xmx128m -Xmn128m"
+      JAVA_OPT_EXT: "-server -Xms128m -Xmx128m"
     command: mqbroker -c /etc/rocketmq/broker.conf
     depends_on:
       - rmqnamesrv
@@ -93,7 +93,7 @@ services:
     ports:
       - 8081:8080
     environment:
-      JAVA_OPTS: "-Drocketmq.namesrv.addr=rmqnamesrv:9876 -Dcom.rocketmq.sendMessageWithVIPChannel=false"
+      JAVA_OPTS: "-Drocketmq.namesrv.addr=rmqnamesrv:9876 -Dcom.rocketmq.sendMessageWithVIPChannel=false -Xms128m -Xmx128m"
     depends_on:
       - rmqnamesrv
     networks:
@@ -213,13 +213,15 @@ services:
     environment:
       TZ: Asia/Shanghai
     working_dir: /app
+    cap_add:
+      - SYS_PTRACE            # 用来执行jmap等等JVM命令
     volumes:                            # 挂载文件
       - ../:/app                 # 将主机的code-api文件夹(java代码)映射到容器内的app文件夹
       - ./ssm-logs/:/app/log                # 映射容器产生的日志到主机的logs文件夹
       - ~/.m2:/root/.m2
     ports:                              # 映射端口
       - "8080:8080"
-    command: mvn clean spring-boot:run -Dspring-boot.run.profiles=prod -Dspring-boot.run.jvmArguments="-Xms128m -Xmx128m" '-Dmaven.test.skip=true' # 容器创建后执行命令运行springboot项目
+    command: mvn clean spring-boot:run -Dspring-boot.run.profiles=prod -Dspring-boot.run.jvmArguments="-Xms512M -Xmx512M -Xmn256M -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Xloggc:gc.log" '-Dmaven.test.skip=true' # 容器创建后执行命令运行springboot项目
     depends_on:
       - cache
       - mysql

@@ -9,9 +9,9 @@
 - （已实现）第二版借鉴**十次方项目将评论优化为MongoDB存储**。
 - （已实现）第三版使用**netty配合websocket实现全双工通信。**
 - （已实现）第四版配合**docker-compose实现一键部署**，不需要自己动手安装各种中间件。
-
-- （进行中）第五版使用rocketMQ替换kafka
-- （未开始）第六版使用 DDD 重构项目
+- （已实现）第五版使用rocketMQ替换kafka
+- （已实现）压测，JVM参数调优
+- （进行中）第六版使用 DDD 重构项目
 - （未开始）第七版优化聊天室
 - （未开始）第八版增加二手交易市场
 
@@ -96,7 +96,7 @@ docker-compose up -d
 
 最终效果：
 
-![image-20210713001324320](./README.assets/image-20210713001324320.png)
+![image-20210716222048145](./README.assets/image-20210716222048145.png)
 
 关闭：
 
@@ -104,6 +104,7 @@ docker-compose up -d
 docker-compose down
 ```
 
+![image-20210716221838811](./README.assets/image-20210716221838811.png)
 
 ## 项目进度（v5.0）
 
@@ -295,6 +296,10 @@ MongoDB是一个基于分布式文件存储的数据库。由C++语言编写。�
 主要是压测加入缓存之后的热门帖子的吞吐量。
 
 [压测项目](jmeter) 
+
+## JVM 参数调整
+
+https://www.yuque.com/docs/share/20d404d8-fd61-4fb3-9cc9-093271bc38ff?# 《docker-compose中的JVM调优》
 
 ## 常见问题
 
